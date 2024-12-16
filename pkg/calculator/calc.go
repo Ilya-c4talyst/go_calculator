@@ -107,7 +107,7 @@ func Calc(expression string) (float64, error) {
 			if err != nil {
 				return 0, err
 			}
-			splitExpression[i] = fmt.Sprintf("%1.0f", r)
+			splitExpression[i] = fmt.Sprintf("%1.1f", r)
 		}
 	}
 
@@ -140,9 +140,23 @@ func CalcMini(s string) (float64, error) {
 	// Функция, которая проходит по строке, очищенной от приоритетов и вычисляет значения
 	numbers := make([]float64, 0)
 	symbols := make([]string, 0)
+	floatFlag := false
 
-	for _, v := range s {
+	for k, v := range s {
 		// Наполняем списки с цифрами и операндами
+		if floatFlag {
+			floatFlag = false
+			continue
+		}
+		if string(v) == "." {
+			floatFlag = true
+			floatValue := strconv.FormatFloat(numbers[len(numbers)-1], 'f', 0, 64) + "." + string(s[k+1])
+			floa, _ := strconv.ParseFloat(string(floatValue), 64)
+			numbers = numbers[:len(numbers)-1]
+			numbers = append(numbers, floa)
+			continue
+		}
+
 		if unicode.IsDigit(rune(v)) {
 			floa, _ := strconv.ParseFloat(string(v), 64)
 			numbers = append(numbers, floa)

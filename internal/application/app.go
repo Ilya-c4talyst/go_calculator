@@ -40,12 +40,15 @@ func (a *Application) LocalRun() error {
 }
 
 type Request struct {
-	Input string
+	Expression string `json:"expression"`
 }
 
 type Response struct {
-	Output float64
-	Error  string
+	Result float64 `json:"result"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
 func CalcHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,44 +57,44 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 
 	var request Request
 	var response Response
+	var responseError ErrorResponse
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("Error while using calculator:", err)
 
-		response.Error = err.Error()
-		jsonData, err := json.Marshal(response)
+		responseError.Error = "InternalServerError"
+		jsonData, err := json.Marshal(responseError)
 		if err == nil {
 			w.Write(jsonData)
 		}
 
-		log.Println("Error while using calculator", err)
 		return
 	}
-	result, err := calculator.Calc(request.Input)
+
+	result, err := calculator.Calc(request.Expression)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		log.Println("Error while using calculator:", err)
 
-		response.Error = err.Error()
-		jsonData, err := json.Marshal(response)
+		responseError.Error = err.Error()
+		jsonData, err := json.Marshal(responseError)
 		if err == nil {
 			w.Write(jsonData)
 		}
 
-		log.Println("Error while using calculator", err)
 		return
-
 	}
-	response.Output = result
-	response.Error = ""
 
+	response.Result = result
 	jsonData, err := json.Marshal(response)
 
 	if err != nil {
 		log.Println("Error while marshal JSON", err)
-		http.Error(w, "Error", http.StatusBadGateway)
+		http.Error(w, "InternalServerError", http.StatusInternalServerError)
 	}
 
 	w.Write(jsonData)
@@ -99,7 +102,7 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 
 func (a *Application) RunServer() error {
 
-	http.HandleFunc("/calc/", CalcHandler)
+	http.HandleFunc("/api/v1/calculate", CalcHandler)
 	err := http.ListenAndServe(":"+a.port, nil)
 
 	if err != nil {

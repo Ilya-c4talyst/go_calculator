@@ -11,9 +11,9 @@ import (
 
 func TestRequestHandler(t *testing.T) {
 	// Создаем валидный/невалидный реквест
-	data_s := []byte(`{"Input":"1+5"}`)
+	data_s := []byte(`{"expression":"1+5"}`)
 	suc := bytes.NewReader(data_s)
-	data_f := []byte(`{"Input":"1/0"}`)
+	data_f := []byte(`{"expression":"1/0"}`)
 	fail := bytes.NewReader(data_f)
 	// Пишем тест-кейсы
 	testCases := []struct {
@@ -24,14 +24,14 @@ func TestRequestHandler(t *testing.T) {
 	}{
 		{
 			name:           "Success Case",
-			req:            httptest.NewRequest(http.MethodGet, "/calc/", suc),
+			req:            httptest.NewRequest(http.MethodPost, "/api/v1/calculate", suc),
 			expectedStatus: http.StatusOK,
 			expected:       6,
 		},
 		{
 			name:           "Bad Request Case",
-			req:            httptest.NewRequest(http.MethodGet, "/calc/", fail),
-			expectedStatus: http.StatusBadRequest,
+			req:            httptest.NewRequest(http.MethodPost, "/api/v1/calculate", fail),
+			expectedStatus: http.StatusUnprocessableEntity,
 			expected:       0,
 		},
 	}
@@ -46,10 +46,14 @@ func TestRequestHandler(t *testing.T) {
 			// Получаем результат
 			res := w.Result()
 			response := Response{}
+			errorResponse := ErrorResponse{}
 
 			// Получаем дату из респонса и десереализируем в структуру
 			data, _ := io.ReadAll(res.Body)
 			err := json.Unmarshal(data, &response)
+			if err != nil {
+				err = json.Unmarshal(data, &errorResponse)
+			}
 			defer res.Body.Close()
 
 			// Проверки
@@ -61,8 +65,8 @@ func TestRequestHandler(t *testing.T) {
 				t.Errorf("Ошибка в статус коде: got %d, want %d", res.StatusCode, tc.expectedStatus)
 			}
 
-			if response.Output != tc.expected {
-				t.Errorf("Ошибка в значении: got %f, want %f", response.Output, tc.expected)
+			if response.Result != tc.expected {
+				t.Errorf("Ошибка в значении: got %f, want %f", response.Result, tc.expected)
 			}
 		})
 	}
