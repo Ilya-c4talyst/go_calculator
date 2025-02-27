@@ -35,6 +35,10 @@
 ![Схема приложения](schema.jpeg)
 
 <h2>Примеры запросов</h2>
+
+<h2>UI</h2>
+<p>В корне проекта есть html страница index.html с помощью которой можно комфортнее выполнять описанные ниже запросы</p>
+
 <h2>Сервер</h2>
 <h3>Для запросов рекомендуется использовать программу Postman</h3>
 <p>Запускается сервер, который принимает запросы на базовый эндпоинт /api/v1/calculate.
@@ -42,13 +46,13 @@
 </p>
 <p>POST http://127.0.0.1:8080/api/v1/calculate</p>
 <p>Вход:</p>
-  ```plaintext
+```plaintext
 {
     "expression": "выражение"
 }
 ```
 <p>На выходе ожидается следующее:</p>
-  ```plaintext
+```plaintext
 {
     "id": ID созданного выражения
 }
@@ -57,11 +61,11 @@
 <p>Чтобы увидеть созданные выражения можно перейти по эндпоинту /api/v1/expressions</p>
 <p>GET http://127.0.0.1:8080/api/v1/expressions</p>
 <p>Вход:</p>
-  ```plaintext
+```plaintext
 {}
 ```
 <p>На выходе ожидается следующее:</p>
-  ```plaintext
+```plaintext
 {
     "expressions": [
         {
@@ -81,11 +85,11 @@
 <p>Также можно точечно обратиться к конкретному выражению, добавивID /api/v1/expression:id</p>
 <p>GET http://127.0.0.1:8080/api/v1/expression/1</p>
 <p>Вход:</p>
-  ```plaintext
+```plaintext
 {}
 ```
 <p>На выходе ожидается следующее:</p>
-  ```plaintext
+```plaintext
 {
     "expression": {
         "id": 1,
@@ -98,11 +102,11 @@
 <p>Также можно точечно обратиться к конкретному выражению, добавивID /api/v1/expression:id</p>
 <p>GET http://127.0.0.1:8080/api/v1/expression/1</p>
 <p>Вход:</p>
-  ```plaintext
+```plaintext
 {}
 ```
 <p>На выходе ожидается следующее:</p>
-  ```plaintext
+```plaintext
 {
     "expression": {
         "id": 1,
@@ -117,11 +121,11 @@
 <p>Получение задачи</p>
 <p>GET http://127.0.0.1:8080/api/v1/internal/task</p>
 <p>Вход:</p>
-  ```plaintext
+```plaintext
 {}
 ```
 <p>На выходе ожидается следующее:</p>
-  ```plaintext
+```plaintext
 {
     "id": 1,
     "arg1": 1,
@@ -133,7 +137,7 @@
 <p>Результаты</p>
 <p>POST http://127.0.0.1:8080/api/v1/internal/task</p>
 <p>Вход:</p>
-  ```plaintext
+```plaintext
 {
   "id": 1,
   "result": 2.00,
