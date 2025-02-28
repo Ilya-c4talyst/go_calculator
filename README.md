@@ -11,6 +11,8 @@
   <li>Операции приоритета (скобки)</li>
 </ol>
 
+
+<h2>UI - используйте index.html</h2>
 <h2>Настройка проекта</h2>
 <ol>
   <li>Клонируйте репозиторий.</li>
@@ -29,6 +31,12 @@
   <li>Запустите проект:
     <pre><code>go run cmd/main.go</code></pre>
   </li>
+</ol>
+<h2>Для продвинутых</h2>
+<ol>
+  <li>docker build -t myapp .</li>
+  <li>docker run -p 8080:8080 myapp</li>
+  <li>Открыть index.html</li>
 </ol>
 
 <h2>Как это работает</h2>
