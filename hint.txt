@@ -1,0 +1,5 @@
+-- Сборка образа
+docker build -t myapp .
+
+-- Запуск контейнера
+docker run -p 8080:8080 myapp

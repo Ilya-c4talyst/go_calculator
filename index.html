@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Арифметические выражения</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Арифметические выражения</h1>
+
+        <!-- Форма для добавления выражения -->
+        <div class="form-group">
+            <label for="expression">Добавить выражение:</label>
+            <input type="text" id="expression" placeholder="Введите выражение">
+            <button onclick="addExpression()">Добавить</button>
+        </div>
+
+        <!-- Кнопка для получения списка выражений -->
+        <div class="form-group">
+            <button onclick="getExpressions()">Получить список выражений</button>
+        </div>
+
+        <!-- Форма для получения выражения по ID -->
+        <div class="form-group">
+            <label for="expressionId">Получить выражение по ID:</label>
+            <input type="text" id="expressionId" placeholder="Введите ID выражения">
+            <button onclick="getExpressionById()">Получить</button>
+        </div>
+
+        <!-- Блок для отображения результатов -->
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function addExpression() {
+            const expression = document.getElementById('expression').value;
+            if (!expression) {
+                alert('Пожалуйста, введите выражение');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/v1/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ expression })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('result').innerText = `Выражение добавлено с ID: ${data.id}`;
+                } else {
+                    document.getElementById('result').innerText = 'Ошибка при добавлении выражения';
+                }
+            } catch (error) {
+                document.getElementById('result').innerText = 'Ошибка при добавлении выражения';
+            }
+        }
+
+        async function getExpressions() {
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/v1/expressions');
+                if (response.ok) {
+                    const data = await response.json();
+                    const expressions = data.expressions.map(expr => 
+                        `ID: ${expr.id}, Статус: ${expr.status}, Результат: ${expr.result}`
+                    ).join('\n');
+                    document.getElementById('result').innerText = expressions;
+                } else {
+                    document.getElementById('result').innerText = 'Ошибка при получении списка выражений';
+                }
+            } catch (error) {
+                document.getElementById('result').innerText = 'Ошибка при получении списка выражений';
+            }
+        }
+
+        async function getExpressionById() {
+            const expressionId = document.getElementById('expressionId').value;
+            if (!expressionId) {
+                alert('Пожалуйста, введите ID выражения');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8080/api/v1/expression/${expressionId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const expr = data.expression;
+                    document.getElementById('result').innerText = `ID: ${expr.id}, Статус: ${expr.status}, Результат: ${expr.result}`;
+                } else if (response.status === 404) {
+                    document.getElementById('result').innerText = 'Выражение не найдено';
+                } else {
+                    document.getElementById('result').innerText = 'Ошибка при получении выражения';
+                }
+            } catch (error) {
+                document.getElementById('result').innerText = 'Ошибка при получении выражения';
+            }
+        }
+    </script>
+</body>
+</html>

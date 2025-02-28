@@ -1,243 +1,222 @@
 package calculator
 
 import (
-	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/Ilya-c4talyst/go_calculator/models"
+	"github.com/joho/godotenv"
 )
 
-// Инициализация ошибок
-var ErrEmpty = errors.New("empty string")
-var ErrPriority = errors.New("error with ()")
-var ErrSymbols = errors.New("error with symbols")
-var ErrZeroDivide = errors.New("zero divivsion")
+// ID таски (TODO: перенести в БД)
+var id = 1
 
-func CheckPriorets(expression string) bool {
-	// Валидация скобок
-	stack := make([]string, 0)
-	for _, v := range expression {
+// Валидация входящего выражения
+func ValidateExpression(expression string) error {
 
-		if string(v) == "(" {
-			stack = append(stack, string(v))
-		} else if string(v) == ")" && len(stack) > 0 {
-			stack = stack[:len(stack)-1]
-		} else if string(v) == ")" {
-			return false
+	// Удаляем все пробелы
+	expression = strings.ReplaceAll(expression, " ", "")
+
+	if expression == "" {
+		return fmt.Errorf("пустое выражение")
+	}
+
+	// Проверка на допустимые символы
+	for _, char := range expression {
+		if !unicode.IsDigit(char) && char != '.' && char != '+' && char != '-' && char != '*' && char != '/' && char != '(' && char != ')' {
+			return fmt.Errorf("недопустимый символ: %c", char)
 		}
 	}
-	return len(stack) == 0
+
+	// Проверка сбалансированности скобок
+	balance := 0
+	for _, char := range expression {
+		if char == '(' {
+			balance++
+		} else if char == ')' {
+			balance--
+			if balance < 0 {
+				return fmt.Errorf("несогласованные скобки")
+			}
+		}
+	}
+	if balance != 0 {
+		return fmt.Errorf("несогласованные скобки")
+	}
+
+	return nil
 }
 
-func CheckDigits(expression string) bool {
-	// Валидация символов
-	symbols := "+-/*()"
-	// Строка начинается и заканчивается не на операнд
-	if strings.HasPrefix(expression, "+") || strings.HasSuffix(expression, "+") ||
-		strings.HasPrefix(expression, "-") || strings.HasSuffix(expression, "-") ||
-		strings.HasPrefix(expression, "*") || strings.HasSuffix(expression, "*") ||
-		strings.HasPrefix(expression, "/") || strings.HasSuffix(expression, "/") {
-		return false
-	}
-	// Флаг, отвечающий за тип символа
-	var flag string
+// Вычисление итогового значения
+func EvaluateExpression(expression string, current *models.Expression) {
 
-	for _, v := range expression {
-		if string(v) == "(" || string(v) == ")" {
-			continue
-		} else if unicode.IsDigit(rune(v)) && (flag == "" || flag == "symb") {
-			flag = "dig"
-		} else if !unicode.IsDigit(rune(v)) && (flag == "" || flag == "dig") && strings.Contains(symbols, string(v)) {
-			flag = "symb"
-		} else {
-			return false
+	// Получение переменных среды
+	godotenv.Load()
+	var TIME_ADDITION_MS, _ = strconv.Atoi(os.Getenv("TIME_ADDITION_MS"))
+	var TIME_SUBTRACTION_MS, _ = strconv.Atoi(os.Getenv("TIME_SUBTRACTION_MS"))
+	var TIME_MULTIPLICATIONS_MS, _ = strconv.Atoi(os.Getenv("TIME_MULTIPLICATIONS_MS"))
+	var TIME_DIVISIONS_MS, _ = strconv.Atoi(os.Getenv("TIME_DIVISIONS_MS"))
+
+	// Удаляем все пробелы из выражения
+	expression = strings.ReplaceAll(expression, " ", "")
+
+	// Стек для чисел
+	var numbers []float64
+	// Стек для операторов
+	var operators []rune
+
+	// Функция для выполнения операции
+	applyOperation := func(op rune) error {
+		if len(numbers) < 2 {
+			return fmt.Errorf("недостаточно операндов для операции %c", op)
 		}
-	}
+		b := numbers[len(numbers)-1]
+		a := numbers[len(numbers)-2]
+		numbers = numbers[:len(numbers)-2]
 
-	return true
-}
+		// Формируем задачу для агента
+		var result float64
+		var task models.Task
 
-func Calc(expression string) (float64, error) {
-	// Основная функция
-	// Валидация входящей строки
-	if len(expression) <= 2 {
-		return 0, ErrEmpty
-	}
-	if strings.Contains(expression, "()") {
-		return 0, ErrSymbols
-	}
-	if !CheckPriorets(expression) {
-		return 0, ErrPriority
-	}
-	if !CheckDigits(expression) {
-		return 0, ErrSymbols
-	}
-	if strings.Contains(expression, "/0") {
-		return 0, ErrZeroDivide
-	}
+		task.Id = id
+		id++
+		task.Arg1 = a
+		task.Arg2 = b
+		task.Operation = op
 
-	noPrioritetsExp := expression
-	noPrioritetsExp = strings.Replace(noPrioritetsExp, "(", " ", -1)
-	noPrioritetsExp = strings.Replace(noPrioritetsExp, ")", " ", -1)
-
-	splitExpression := strings.Split(noPrioritetsExp, " ")
-
-	// Если не было знаков приоритета
-	if len(splitExpression) == 1 {
-		result, err := CalcMini(splitExpression[0])
-		if err != nil {
-			return 0, err
+		switch op {
+		case '+':
+			task.OperationTime = TIME_ADDITION_MS
+		case '-':
+			task.OperationTime = TIME_SUBTRACTION_MS
+		case '*':
+			task.OperationTime = TIME_MULTIPLICATIONS_MS
+		case '/':
+			task.OperationTime = TIME_DIVISIONS_MS
 		}
-		return result, nil
+
+		models.Tasks = append(models.Tasks, task)
+		log.Println("Task created")
+
+		// Ждем ответ от агента, проверяя выполненные задачи
+
+	Loop:
+		for {
+			for _, t := range models.TasksDone {
+				if t.Id == task.Id {
+					result = t.Result
+					models.TasksDone = append(models.TasksDone[:len(models.TasksDone)-1], models.TasksDone[len(models.TasksDone):]...)
+					break Loop
+				}
+			}
+		}
+
+		log.Println("Loop closed, tasks done")
+
+		numbers = append(numbers, result)
+		return nil
 	}
 
-	// Иначе проходимся по каждому значению списка и делаем промежуточные вычисления
-	for i, v := range splitExpression {
+	// Обходим каждый символ в выражении
+	for i := 0; i < len(expression); i++ {
+		char := rune(expression[i])
 
-		if v == "" || len(v) == 1 ||
-			strings.HasPrefix(v, "+") || strings.HasSuffix(v, "+") ||
-			strings.HasSuffix(v, "/") || strings.HasPrefix(v, "/") ||
-			strings.HasPrefix(v, "-") || strings.HasSuffix(v, "-") ||
-			strings.HasPrefix(v, "*") || strings.HasSuffix(v, "*") {
-			continue
+		if unicode.IsDigit(char) || char == '.' {
+			// Если символ - цифра или точка, собираем число
+			j := i
+			for j < len(expression) && (unicode.IsDigit(rune(expression[j])) || expression[j] == '.') {
+				j++
+			}
+			num, err := strconv.ParseFloat(expression[i:j], 64)
 
-		} else {
-			r, err := CalcMini(v)
 			if err != nil {
-				return 0, err
+				current.Result = fmt.Sprintf("ошибка при парсинге числа: %v", err)
+				current.Status = "broken"
+				return
 			}
-			splitExpression[i] = fmt.Sprintf("%1.1f", r)
+
+			numbers = append(numbers, num)
+			i = j - 1
+
+		} else if char == '(' {
+			// Если символ - открывающая скобка, добавляем в стек операторов
+			operators = append(operators, char)
+
+		} else if char == ')' {
+			// Если символ - закрывающая скобка, выполняем операции до открывающей скобки
+			for len(operators) > 0 && operators[len(operators)-1] != '(' {
+				if err := applyOperation(operators[len(operators)-1]); err != nil {
+					current.Result = err.Error()
+					current.Status = "broken"
+					return
+				}
+				operators = operators[:len(operators)-1]
+			}
+			if len(operators) == 0 {
+				current.Result = "несогласованные скобки"
+				current.Status = "broken"
+				return
+			}
+			// Убираем открывающую скобку
+			operators = operators[:len(operators)-1]
+
+		} else if char == '+' || char == '-' || char == '*' || char == '/' {
+
+			// Если символ - оператор, выполняем операции с более высоким приоритетом
+			for len(operators) > 0 && precedence(operators[len(operators)-1]) >= precedence(char) {
+				if err := applyOperation(operators[len(operators)-1]); err != nil {
+					current.Result = err.Error()
+					current.Status = "broken"
+					return
+				}
+				operators = operators[:len(operators)-1]
+			}
+			operators = append(operators, char)
+
+		} else {
+			current.Result = fmt.Sprintf("неизвестный символ: %c", char)
+			current.Status = "broken"
+			return
 		}
 	}
 
-	// Повторная итерация по приоритетам
-	for i, v := range splitExpression {
-
-		if (strings.HasPrefix(v, "+") || strings.HasPrefix(v, "-") ||
-			strings.HasPrefix(v, "*") || strings.HasPrefix(v, "/")) && splitExpression[i-1] == "" {
-			splitExpression[i-1] = string(v[0])
-			splitExpression[i] = v[1:]
-
-		} else if (strings.HasSuffix(v, "+") || strings.HasSuffix(v, "-") ||
-			strings.HasSuffix(v, "*") || strings.HasSuffix(v, "/")) && splitExpression[i+1] == "" {
-			splitExpression[i+1] = string(v[len(v)-1])
-			splitExpression[i] = v[:len(v)-1]
+	// Выполняем оставшиеся операции
+	for len(operators) > 0 {
+		if operators[len(operators)-1] == '(' {
+			current.Result = "несогласованные скобки"
+			current.Status = "broken"
+			return
 		}
+		if err := applyOperation(operators[len(operators)-1]); err != nil {
+			current.Result = err.Error()
+			current.Status = "broken"
+			return
+		}
+		operators = operators[:len(operators)-1]
 	}
 
-	newExp := strings.Join(splitExpression, "")
-	result, err := CalcMini(newExp)
-
-	if err != nil {
-		return 0, err
+	if len(numbers) != 1 {
+		current.Result = "ошибка в выражении"
+		current.Status = "broken"
+		return
 	}
 
-	return result, nil
+	current.Result = strconv.FormatFloat(numbers[0], 'f', 2, 64)
+	current.Status = "solved"
+	log.Println("Expression evaluated successfully")
 }
 
-func CalcMini(s string) (float64, error) {
-	// Функция, которая проходит по строке, очищенной от приоритетов и вычисляет значения
-	numbers := make([]float64, 0)
-	symbols := make([]string, 0)
-	floatFlag := false
-
-	for k, v := range s {
-		// Наполняем списки с цифрами и операндами
-		if floatFlag {
-			floatFlag = false
-			continue
-		}
-		if string(v) == "." {
-			floatFlag = true
-			floatValue := strconv.FormatFloat(numbers[len(numbers)-1], 'f', 0, 64) + "." + string(s[k+1])
-			floa, _ := strconv.ParseFloat(string(floatValue), 64)
-			numbers = numbers[:len(numbers)-1]
-			numbers = append(numbers, floa)
-			continue
-		}
-
-		if unicode.IsDigit(rune(v)) {
-			floa, _ := strconv.ParseFloat(string(v), 64)
-			numbers = append(numbers, floa)
-		} else {
-			symbols = append(symbols, string(v))
-		}
+// Функция для определения приоритета оператора
+func precedence(op rune) int {
+	switch op {
+	case '+', '-':
+		return 1
+	case '*', '/':
+		return 2
 	}
-
-	symbLen := len(symbols)
-	res := 0.0
-
-	// Пока есть операнды
-	for symbLen > 0 {
-
-		for i, v := range symbols {
-			// Первым приоритетом пройдемся по умножениям и делениям
-			if string(v) == "*" {
-				// Умножение
-				res = numbers[i] * numbers[i+1]
-				numbers[i+1] = res
-				if i < len(s)-1 {
-					numbers = append(numbers[:i], numbers[i+1:]...)
-					symbols = append(symbols[:i], symbols[i+1:]...)
-				} else {
-					symbols = symbols[:i]
-					numbers = numbers[:i+1]
-				}
-				symbLen--
-				break
-
-			} else if string(v) == "/" {
-				// Деление
-				if numbers[i+1] == 0.0 {
-					return 0, ErrZeroDivide
-				}
-				res = numbers[i] / numbers[i+1]
-				numbers[i+1] = res
-				if i < len(s)-1 {
-					numbers = append(numbers[:i], numbers[i+1:]...)
-					symbols = append(symbols[:i], symbols[i+1:]...)
-				} else {
-					symbols = symbols[:i]
-					numbers = numbers[:i+1]
-				}
-				symbLen--
-				break
-			}
-		}
-
-		for i, v := range symbols {
-			// Вторым приоритетом пройдемся по разностям и суммам
-			if string(v) == "-" {
-				// Разность
-				res = numbers[i] - numbers[i+1]
-				numbers[i+1] = res
-				if i < len(s)-1 {
-					numbers = append(numbers[:i], numbers[i+1:]...)
-					symbols = append(symbols[:i], symbols[i+1:]...)
-				} else {
-					symbols = symbols[:i]
-					numbers = numbers[:i+1]
-				}
-				symbLen--
-				break
-
-			} else if string(v) == "+" {
-				// Сумма
-				res = numbers[i] + numbers[i+1]
-				numbers[i+1] = res
-				if i < len(s)-1 {
-					numbers = append(numbers[:i], numbers[i+1:]...)
-					symbols = append(symbols[:i], symbols[i+1:]...)
-				} else {
-					symbols = symbols[:i]
-					numbers = numbers[:i+1]
-				}
-				symbLen--
-				break
-			}
-		}
-	}
-
-	return numbers[0], nil
+	return 0
 }
