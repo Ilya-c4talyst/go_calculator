@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/Ilya-c4talyst/go_calculator/models"
+	"github.com/Ilya-c4talyst/go_calculator/service/models"
 	"github.com/joho/godotenv"
 )
 
@@ -52,7 +52,7 @@ func ValidateExpression(expression string) error {
 }
 
 // Вычисление итогового значения
-func EvaluateExpression(expression string, current *models.Expression) {
+func EvaluateExpression(expression string, current *models.Expression) *models.Expression {
 
 	// Получение переменных среды
 	godotenv.Load()
@@ -136,7 +136,7 @@ func EvaluateExpression(expression string, current *models.Expression) {
 			if err != nil {
 				current.Result = fmt.Sprintf("ошибка при парсинге числа: %v", err)
 				current.Status = "broken"
-				return
+				return current
 			}
 
 			numbers = append(numbers, num)
@@ -152,14 +152,14 @@ func EvaluateExpression(expression string, current *models.Expression) {
 				if err := applyOperation(operators[len(operators)-1]); err != nil {
 					current.Result = err.Error()
 					current.Status = "broken"
-					return
+					return current
 				}
 				operators = operators[:len(operators)-1]
 			}
 			if len(operators) == 0 {
 				current.Result = "несогласованные скобки"
 				current.Status = "broken"
-				return
+				return current
 			}
 			// Убираем открывающую скобку
 			operators = operators[:len(operators)-1]
@@ -171,7 +171,7 @@ func EvaluateExpression(expression string, current *models.Expression) {
 				if err := applyOperation(operators[len(operators)-1]); err != nil {
 					current.Result = err.Error()
 					current.Status = "broken"
-					return
+					return current
 				}
 				operators = operators[:len(operators)-1]
 			}
@@ -180,7 +180,7 @@ func EvaluateExpression(expression string, current *models.Expression) {
 		} else {
 			current.Result = fmt.Sprintf("неизвестный символ: %c", char)
 			current.Status = "broken"
-			return
+			return current
 		}
 	}
 
@@ -189,12 +189,12 @@ func EvaluateExpression(expression string, current *models.Expression) {
 		if operators[len(operators)-1] == '(' {
 			current.Result = "несогласованные скобки"
 			current.Status = "broken"
-			return
+			return current
 		}
 		if err := applyOperation(operators[len(operators)-1]); err != nil {
 			current.Result = err.Error()
 			current.Status = "broken"
-			return
+			return current
 		}
 		operators = operators[:len(operators)-1]
 	}
@@ -202,12 +202,14 @@ func EvaluateExpression(expression string, current *models.Expression) {
 	if len(numbers) != 1 {
 		current.Result = "ошибка в выражении"
 		current.Status = "broken"
-		return
+		return current
 	}
 
 	current.Result = strconv.FormatFloat(numbers[0], 'f', 2, 64)
 	current.Status = "solved"
 	log.Println("Expression evaluated successfully")
+
+	return current
 }
 
 // Функция для определения приоритета оператора

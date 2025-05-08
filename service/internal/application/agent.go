@@ -10,14 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Ilya-c4talyst/go_calculator/internal/utils"
-	"github.com/Ilya-c4talyst/go_calculator/models"
+	"github.com/Ilya-c4talyst/go_calculator/service/internal/auth_client"
+	"github.com/Ilya-c4talyst/go_calculator/service/internal/utils"
+	"github.com/Ilya-c4talyst/go_calculator/service/models"
 	"github.com/joho/godotenv"
 )
 
 // Создание агента
-func NewAgent() *Agent {
-	return &Agent{}
+func NewAgent(authCli *auth_client.Client) *Agent {
+	return &Agent{AuthCli: authCli}
 }
 
 func (a *Agent) RunAgent() {
@@ -84,7 +85,6 @@ func (a *Agent) RunAgent() {
 			jsonBytes, _ := json.Marshal(taskDone)
 
 			// Отправляем результат
-
 			_, err = http.Post("http://127.0.0.1:8080/api/v1/internal/task", "application/json", bytes.NewReader(jsonBytes))
 			if err != nil {
 				log.Println(err, "Post task")

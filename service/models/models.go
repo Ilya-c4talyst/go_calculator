@@ -17,9 +17,11 @@ type DoneTask struct {
 
 // Модель выражения
 type Expression struct {
-	Id     int    `json:"id"`
-	Status string `json:"status"`
-	Result string `json:"result"`
+	Id      int    `json:"id";gorm:"primaryKey"`
+	Value   string `json:"expression"`
+	Status  string `json:"status"`
+	Result  string `json:"result"`
+	User_id uint32 `json:"user_id;gorm:"not null"`
 }
 
 // Респонс списка выражений
@@ -39,7 +41,3 @@ type PostExpressionsResponse struct {
 // Имитация БД (надо будет поменять на таблички)
 var Tasks = []Task{}
 var TasksDone = []DoneTask{}
-var Expressions = []*Expression{}
-
-// ID для выражений
-var Id = 0

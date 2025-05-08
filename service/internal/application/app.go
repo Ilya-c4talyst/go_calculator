@@ -6,14 +6,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Ilya-c4talyst/go_calculator/internal/utils"
-	"github.com/Ilya-c4talyst/go_calculator/models"
-	"github.com/Ilya-c4talyst/go_calculator/pkg/calculator"
+	"github.com/Ilya-c4talyst/go_calculator/service/database"
+	"github.com/Ilya-c4talyst/go_calculator/service/internal/auth_client"
+	"github.com/Ilya-c4talyst/go_calculator/service/internal/utils"
+	"github.com/Ilya-c4talyst/go_calculator/service/models"
+	"github.com/Ilya-c4talyst/go_calculator/service/pkg/calculator"
 )
 
 // Создание приложения
-func NewApp(port string) *Application {
-	return &Application{Port: port}
+func NewApp(port string, authCli *auth_client.Client) *Application {
+	return &Application{
+		Port:    port,
+		AuthCli: authCli,
+	}
 }
 
 // Главный обработчик для выражений
@@ -38,21 +43,29 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Validation passed")
 
+	userID := r.Context().Value("userID").(uint32)
+
 	// Создаем задачи для выражений и заносим в имитацию БД
-	Expression := models.Expression{Id: models.Id}
-	Expression.Status = "queued"
-	Expression.Result = "-"
-	models.Expressions = append(models.Expressions, &Expression)
+	expression := models.Expression{}
+	expression.Value = request.Expression
+	expression.Status = "queued"
+	expression.Result = "-"
+	expression.User_id = userID
+	err = database.AddExpression(&expression)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
 	go func() {
-		models.Id++
-		calculator.EvaluateExpression(request.Expression, &Expression)
+		solved := calculator.EvaluateExpression(request.Expression, &expression)
+		database.UpdateExpression(solved)
 	}()
 	log.Println("Calc started")
 
 	// Отдаем пользователю информацию о созданной задаче
 	response := models.PostExpressionsResponse{
-		Id: Expression.Id,
+		Id: expression.Id,
 	}
 
 	jsonData, err := json.Marshal(response)
@@ -71,8 +84,15 @@ func ExpressionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	userID := r.Context().Value("userID").(uint32)
+	expressions, err := database.GetExpressions(userID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
 	response := models.ExpressionsResponse{
-		Expressions: models.Expressions,
+		Expressions: expressions,
 	}
 	jsonData, err := json.Marshal(response)
 	if err != nil {
@@ -92,12 +112,10 @@ func ExpressionHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Path[len("/api/v1/expression/"):]
 	id, err := strconv.Atoi(idStr)
 
-	if err != nil || id < 0 || id >= len(models.Expressions) {
-		http.Error(w, "Index not found", http.StatusNotFound)
-		return
+	expression, err := database.GetExpressionbyID(r.Context().Value("userID").(uint32), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-
-	expression := models.Expressions[id]
 
 	response := models.ExpressionResponse{
 		Expression: expression,
@@ -155,10 +173,12 @@ func InternalTaskHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Application) RunServer() error {
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/calculate", CalcHandler)
-	mux.HandleFunc("/api/v1/expression/", ExpressionHandler)
-	mux.HandleFunc("/api/v1/expressions", ExpressionsHandler)
-	mux.HandleFunc("/api/v1/internal/task", InternalTaskHandler)
+	protected := utils.AuthMiddleware(a.AuthCli)
+
+	mux.Handle("/api/v1/calculate", protected(http.HandlerFunc(CalcHandler)))
+	mux.Handle("/api/v1/expression/", protected(http.HandlerFunc(ExpressionHandler)))
+	mux.Handle("/api/v1/expressions", protected(http.HandlerFunc(ExpressionsHandler)))
+	mux.HandleFunc("/api/v1/internal/task", InternalTaskHandler) // без аутентификации
 
 	handler := utils.EnableCORS(mux)
 

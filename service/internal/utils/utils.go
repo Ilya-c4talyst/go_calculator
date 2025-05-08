@@ -1,6 +1,10 @@
 package utils
 
-import "net/http"
+import (
+	"context"
+	"github.com/Ilya-c4talyst/go_calculator/service/internal/auth_client"
+	"net/http"
+)
 
 // Семафор
 type Semaphore struct {
@@ -42,4 +46,34 @@ func EnableCORS(next http.Handler) http.Handler {
 		// Передаем запрос дальше
 		next.ServeHTTP(w, r)
 	})
+}
+
+func AuthMiddleware(authCli *auth_client.Client) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Получаем токен аутентификации
+			token := r.Header.Get("Authorization")
+
+			// Валидируем его и получаем данные о пользователе
+			if token == "" {
+				http.Error(w, "Authorization header required", http.StatusUnauthorized)
+				return
+			}
+
+			userID, err := authCli.ValidateToken(token)
+
+			if err != nil {
+				http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+				return
+			}
+
+			// Создаем новый контекст с userID
+			ctx := context.WithValue(r.Context(), "userID", userID)
+
+			// Создаем новый запрос с обновленным контекстом
+			r = r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
