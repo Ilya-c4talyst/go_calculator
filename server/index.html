@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Auth Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        input {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container" id="register-form">
+            <h2>Регистрация</h2>
+            <input type="text" id="reg-username" placeholder="Имя пользователя">
+            <input type="password" id="reg-password" placeholder="Пароль">
+            <button onclick="register()">Зарегистрироваться</button>
+            <p class="error" id="reg-error"></p>
+            <p class="success" id="reg-success"></p>
+        </div>
+
+        <div class="form-container" id="login-form">
+            <h2>Вход</h2>
+            <input type="text" id="login-username" placeholder="Имя пользователя">
+            <input type="password" id="login-password" placeholder="Пароль">
+            <button onclick="login()">Войти</button>
+            <p class="error" id="login-error"></p>
+        </div>
+
+        <div class="form-container hidden" id="protected-section">
+            <h2>Защищённый запрос</h2>
+            <button onclick="makeProtectedRequest()">Получить данные профиля</button>
+            <p class="error" id="protected-error"></p>
+            <pre id="protected-result"></pre>
+            <button onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080'; // Замените на ваш URL бэкенда
+        
+        // Проверяем есть ли токен при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('jwt')) {
+                showProtectedSection();
+            }
+        });
+
+        // Регистрация
+        async function register() {
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    document.getElementById('reg-error').textContent = data.error || 'Ошибка регистрации';
+                    return;
+                }
+                
+                document.getElementById('reg-success').textContent = 'Регистрация успешна! Теперь вы можете войти.';
+                document.getElementById('reg-error').textContent = '';
+                
+                // Очищаем поля
+                document.getElementById('reg-username').value = '';
+                document.getElementById('reg-password').value = '';
+                
+            } catch (error) {
+                document.getElementById('reg-error').textContent = 'Ошибка сети';
+            }
+        }
+
+        // Вход
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    document.getElementById('login-error').textContent = data.error || 'Ошибка входа';
+                    return;
+                }
+                
+                // Сохраняем токен
+                localStorage.setItem('jwt', data.token);
+                document.getElementById('login-error').textContent = '';
+                
+                // Очищаем поля
+                document.getElementById('login-username').value = '';
+                document.getElementById('login-password').value = '';
+                
+                // Показываем защищённую секцию
+                showProtectedSection();
+                
+            } catch (error) {
+                document.getElementById('login-error').textContent = 'Ошибка сети';
+            }
+        }
+
+        // Защищённый запрос
+        async function makeProtectedRequest() {
+            const token = localStorage.getItem('jwt');
+            
+            try {
+                const response = await fetch(`${API_URL}/profile`, {
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    document.getElementById('protected-error').textContent = data.error || 'Ошибка запроса';
+                    return;
+                }
+                
+                document.getElementById('protected-result').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('protected-error').textContent = '';
+                
+            } catch (error) {
+                document.getElementById('protected-error').textContent = 'Ошибка сети';
+            }
+        }
+
+        // Выход
+        function logout() {
+            localStorage.removeItem('jwt');
+            document.getElementById('protected-section').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        }
+
+        // Показать защищённую секцию
+        function showProtectedSection() {
+            document.getElementById('protected-section').classList.remove('hidden');
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
