@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	models "github.com/Ilya-c4talyst/go_calculator/server/models"
-	utils "github.com/Ilya-c4talyst/go_calculator/server/utils"
+	models "github.com/Ilya-c4talyst/go_calculator/auth/models"
+	utils "github.com/Ilya-c4talyst/go_calculator/auth/utils"
 )
 
 type AuthHandler struct {

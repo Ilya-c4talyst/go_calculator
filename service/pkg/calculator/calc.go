@@ -115,7 +115,7 @@ func EvaluateExpression(expression string, current *models.Expression) *models.E
 			}
 		}
 
-		log.Println("Loop closed, tasks done")
+		log.Println("Loop closed, task done")
 
 		numbers = append(numbers, result)
 		return nil

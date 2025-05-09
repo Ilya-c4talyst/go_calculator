@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
-	pb "github.com/Ilya-c4talyst/go_calculator/server/proto"
-	"github.com/Ilya-c4talyst/go_calculator/server/utils"
+	pb "github.com/Ilya-c4talyst/go_calculator/auth/proto"
+	"github.com/Ilya-c4talyst/go_calculator/auth/utils"
 )
 
 // Сервер авторизации

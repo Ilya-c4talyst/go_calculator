@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	models "github.com/Ilya-c4talyst/go_calculator/server/models"
+	models "github.com/Ilya-c4talyst/go_calculator/auth/models"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )

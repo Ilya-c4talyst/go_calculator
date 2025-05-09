@@ -21,8 +21,8 @@ func AddExpression(expression *models.Expression) error {
 func GetExpressions(userID uint32) ([]*models.Expression, error) {
 	var expressions []*models.Expression
 
-	// Ищем выражения только для указанного пользователя
-	result := DB.Where("user_id = ?", userID).Find(&expressions)
+	// Ищем выражения только для указанного пользователя, сортируем по id в обратном порядке
+	result := DB.Where("user_id = ?", userID).Order("id desc").Find(&expressions)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			// Возвращаем пустой слайс, если записей нет

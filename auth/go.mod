@@ -1,4 +1,4 @@
-module github.com/Ilya-c4talyst/go_calculator/server
+module github.com/Ilya-c4talyst/go_calculator/auth
 
 go 1.23.0
 
