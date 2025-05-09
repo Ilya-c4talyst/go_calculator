@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "github.com/Ilya-c4talyst/go_calculator/server/proto";
+option go_package = "github.com/Ilya-c4talyst/go_calculator/auth/proto";
 
 service AuthService {
   rpc ValidateToken (TokenRequest) returns (TokenResponse);

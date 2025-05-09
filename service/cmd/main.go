@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Инициализация gRPC клиента
-	authCli, err := auth_client.New("localhost:50051")
+	authCli, err := auth_client.New("auth_service:50051")
 	if err != nil {
 		log.Fatal("Failed to create auth client: ", err)
 	}

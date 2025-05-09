@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	pb "github.com/Ilya-c4talyst/go_calculator/service/proto"
@@ -30,6 +31,10 @@ func New(addr string) (*Client, error) {
 		grpc.WithBlock(),
 		grpc.WithTimeout(5 * time.Second),
 		grpc.WithReturnConnectionError(),
+	}
+
+	if os.Getenv("ENV") == "dev" {
+		addr = "localhost:50051"
 	}
 
 	conn, err := grpc.Dial(addr, dialOptions...)

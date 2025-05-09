@@ -376,8 +376,7 @@
                         `ID: ${expr.id}\n` +
                         `Выражение: ${expr.expression}\n` +
                         `Статус: ${expr.status}\n` +
-                        `Результат: ${expr.result || 'еще не вычислен'}\n` +
-                        `Дата создания: ${new Date(expr.created_at).toLocaleString()}`
+                        `Результат: ${expr.result || 'еще не вычислен'}\n`
                     );
                 } else if (response.status === 404) {
                     showExpressionsError('Выражение не найдено');

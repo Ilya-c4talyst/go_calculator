@@ -36,9 +36,11 @@ func (a *Agent) RunAgent() {
 	// Создание мьютекса и семафора
 	var mutex sync.Mutex
 	sema := utils.NewSemaphore(COMPUTING_POWER)
-
 	// Запускаем агента, который будет постоянно опрашивать наш сервер
 	for {
+		// Добавляем фриз (имитация долгой операции)
+		time.Sleep(time.Second * 1)
+
 		sema.Acquire()
 
 		// Основная логика агента
@@ -48,7 +50,8 @@ func (a *Agent) RunAgent() {
 			defer mutex.Unlock()
 
 			var task models.Task
-			resp, err := http.Get("http://127.0.0.1:8080/api/v1/internal/task")
+
+			resp, err := http.Get("http://localhost:8080/api/v1/internal/task")
 
 			if err != nil {
 				log.Println(err, "Get task error")
@@ -85,7 +88,7 @@ func (a *Agent) RunAgent() {
 			jsonBytes, _ := json.Marshal(taskDone)
 
 			// Отправляем результат
-			_, err = http.Post("http://127.0.0.1:8080/api/v1/internal/task", "application/json", bytes.NewReader(jsonBytes))
+			_, err = http.Post("http://localhost:8080/api/v1/internal/task", "application/json", bytes.NewReader(jsonBytes))
 			if err != nil {
 				log.Println(err, "Post task")
 				return

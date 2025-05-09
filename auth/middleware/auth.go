@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	utils "github.com/Ilya-c4talyst/go_calculator/server/utils"
+	utils "github.com/Ilya-c4talyst/go_calculator/auth/utils"
 	"github.com/gin-gonic/gin"
 )
 

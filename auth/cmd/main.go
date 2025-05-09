@@ -7,18 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"github.com/Ilya-c4talyst/go_calculator/server/cmd/auth_grpc"
-	"github.com/Ilya-c4talyst/go_calculator/server/database"
-	"github.com/Ilya-c4talyst/go_calculator/server/handlers"
-	"github.com/Ilya-c4talyst/go_calculator/server/middleware"
-	"github.com/Ilya-c4talyst/go_calculator/server/models"
+	"github.com/Ilya-c4talyst/go_calculator/auth/cmd/auth_grpc"
+	"github.com/Ilya-c4talyst/go_calculator/auth/database"
+	"github.com/Ilya-c4talyst/go_calculator/auth/handlers"
+	"github.com/Ilya-c4talyst/go_calculator/auth/middleware"
+	"github.com/Ilya-c4talyst/go_calculator/auth/models"
 )
 
 func main() {
 
 	// Получение данных окружения
 	godotenv.Load()
-	var Port = os.Getenv("PORT")
 	var POSTGRES_USER = os.Getenv("POSTGRES_USER")
 	var POSTGRES_PASSWORD = os.Getenv("POSTGRES_PASSWORD")
 	var POSTGRES_PORT = os.Getenv("POSTGRES_PORT")
@@ -59,5 +58,5 @@ func main() {
 	}
 
 	// Запуск сервера
-	r.Run(":" + Port)
+	r.Run(":8081")
 }
