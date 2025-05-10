@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Арифметические выражения</title>
+    <title>Калькулятор арифметических выражений</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            line-height: 1.6;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
+            padding: 0 15px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .form-group {
             margin-bottom: 15px;
@@ -19,123 +29,394 @@
         .form-group label {
             display: block;
             margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
         }
         .form-group input {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
         }
-        .form-group button {
+        button {
             padding: 10px 15px;
             background-color: #007BFF;
             color: white;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            margin-right: 10px;
+            font-size: 16px;
+            transition: background-color 0.3s;
         }
-        .form-group button:hover {
+        button:hover {
             background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
         .result {
             margin-top: 20px;
-            padding: 10px;
+            padding: 15px;
             background-color: #f9f9f9;
             border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .success {
+            color: #28a745;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+        .tab {
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            margin-right: 5px;
+            background-color: #f1f1f1;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -1px;
+        }
+        .tab.active {
+            background-color: #007BFF;
+            color: white;
+            border-color: #007BFF;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #444;
+            margin-top: 0;
+        }
+        #logout-btn {
+            background-color: #dc3545;
+        }
+        #logout-btn:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Арифметические выражения</h1>
+        <h1>Калькулятор арифметических выражений</h1>
 
-        <!-- Форма для добавления выражения -->
-        <div class="form-group">
-            <label for="expression">Добавить выражение:</label>
-            <input type="text" id="expression" placeholder="Введите выражение">
-            <button onclick="addExpression()">Добавить</button>
+        <!-- Табы для переключения между разделами -->
+        <div>
+            <div class="tab active" onclick="switchTab('auth')">Аутентификация</div>
+            <div class="tab" onclick="switchTab('expressions')">Выражения</div>
         </div>
 
-        <!-- Кнопка для получения списка выражений -->
-        <div class="form-group">
-            <button onclick="getExpressions()">Получить список выражений</button>
+        <!-- Секция аутентификации -->
+        <div id="auth-section" class="section">
+            <h2>Аутентификация</h2>
+            
+            <div class="form-group">
+                <label for="username">Имя пользователя:</label>
+                <input type="text" id="username" placeholder="Введите имя пользователя">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" placeholder="Введите пароль">
+            </div>
+            
+            <button onclick="register()">Регистрация</button>
+            <button onclick="login()">Вход</button>
+            <button onclick="logout()" class="hidden" id="logout-btn">Выход</button>
+            
+            <div id="auth-result" class="result hidden"></div>
+            <div id="auth-error" class="error"></div>
+            <div id="auth-success" class="success"></div>
         </div>
 
-        <!-- Форма для получения выражения по ID -->
-        <div class="form-group">
-            <label for="expressionId">Получить выражение по ID:</label>
-            <input type="text" id="expressionId" placeholder="Введите ID выражения">
-            <button onclick="getExpressionById()">Получить</button>
+        <!-- Секция работы с выражениями -->
+        <div id="expressions-section" class="section hidden">
+            <h2>Работа с выражениями</h2>
+            
+            <div class="form-group">
+                <label for="expression">Добавить выражение:</label>
+                <input type="text" id="expression" placeholder="Например: 2+2*2">
+                <button onclick="addExpression()">Добавить</button>
+            </div>
+            
+            <div class="form-group">
+                <button onclick="getExpressions()">Получить все выражения</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="expressionId">Получить выражение по ID:</label>
+                <input type="text" id="expressionId" placeholder="Введите ID выражения">
+                <button onclick="getExpressionById()">Получить</button>
+            </div>
+            
+            <div id="expressions-result" class="result"></div>
+            <div id="expressions-error" class="error"></div>
         </div>
-
-        <!-- Блок для отображения результатов -->
-        <div id="result" class="result"></div>
     </div>
 
     <script>
-        async function addExpression() {
-            const expression = document.getElementById('expression').value;
-            if (!expression) {
-                alert('Пожалуйста, введите выражение');
+        // Конфигурация API
+        const AUTH_API_URL = 'http://localhost:8081'; // Сервис авторизации
+        const MAIN_API_URL = 'http://localhost:8080'; // Основной сервис
+        
+        let token = localStorage.getItem('jwt');
+        
+        // Проверка аутентификации при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            if (token) {
+                showExpressionsSection();
+            }
+        });
+        
+        // Переключение между табами
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('expressions-section').classList.add('hidden');
+            document.getElementById(`${tabName}-section`).classList.remove('hidden');
+        }
+        
+        // Регистрация нового пользователя
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showAuthError('Имя пользователя и пароль обязательны');
                 return;
             }
-
+            
             try {
-                const response = await fetch('http://127.0.0.1:8080/api/v1/calculate', {
+                const response = await fetch(`${AUTH_API_URL}/register`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showAuthError(data.error || 'Ошибка регистрации');
+                    return;
+                }
+                
+                showAuthSuccess('Регистрация успешна! Теперь вы можете войти.');
+                clearAuthFields();
+                
+            } catch (error) {
+                showAuthError('Ошибка сети: ' + error.message);
+            }
+        }
+        
+        // Вход пользователя
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showAuthError('Имя пользователя и пароль обязательны');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${AUTH_API_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showAuthError(data.error || 'Ошибка входа');
+                    return;
+                }
+                
+                // Сохраняем токен
+                token = data.token;
+                localStorage.setItem('jwt', token);
+                showAuthSuccess('Вход выполнен успешно!');
+                clearAuthFields();
+                showExpressionsSection();
+                
+            } catch (error) {
+                showAuthError('Ошибка сети: ' + error.message);
+            }
+        }
+        
+        // Выход из системы
+        function logout() {
+            token = null;
+            localStorage.removeItem('jwt');
+            document.getElementById('logout-btn').classList.add('hidden');
+            document.getElementById('auth-result').classList.add('hidden');
+            showAuthSuccess('Вы вышли из системы');
+            switchTab('auth');
+        }
+        
+        // Добавление нового выражения
+        async function addExpression() {
+            if (!token) {
+                showExpressionsError('Требуется авторизация');
+                switchTab('auth');
+                return;
+            }
+            
+            const expression = document.getElementById('expression').value;
+            if (!expression) {
+                showExpressionsError('Пожалуйста, введите выражение');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${MAIN_API_URL}/api/v1/calculate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
                     },
                     body: JSON.stringify({ expression })
                 });
-
+                
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('result').innerText = `Выражение добавлено с ID: ${data.id}`;
+                    showExpressionsResult(`Выражение добавлено с ID: ${data.id}\nСтатус: В очереди на вычисление`);
+                    document.getElementById('expression').value = '';
                 } else {
-                    document.getElementById('result').innerText = 'Ошибка при добавлении выражения';
+                    const error = await response.text();
+                    showExpressionsError(error || 'Ошибка при добавлении выражения');
                 }
             } catch (error) {
-                document.getElementById('result').innerText = 'Ошибка при добавлении выражения';
+                showExpressionsError('Ошибка сети: ' + error.message);
             }
         }
-
+        
+        // Получение списка всех выражений
         async function getExpressions() {
-            try {
-                const response = await fetch('http://127.0.0.1:8080/api/v1/expressions');
-                if (response.ok) {
-                    const data = await response.json();
-                    const expressions = data.expressions.map(expr => 
-                        `ID: ${expr.id}, Статус: ${expr.status}, Результат: ${expr.result}`
-                    ).join('\n');
-                    document.getElementById('result').innerText = expressions;
-                } else {
-                    document.getElementById('result').innerText = 'Ошибка при получении списка выражений';
-                }
-            } catch (error) {
-                document.getElementById('result').innerText = 'Ошибка при получении списка выражений';
-            }
-        }
-
-        async function getExpressionById() {
-            const expressionId = document.getElementById('expressionId').value;
-            if (!expressionId) {
-                alert('Пожалуйста, введите ID выражения');
+            if (!token) {
+                showExpressionsError('Требуется авторизация');
+                switchTab('auth');
                 return;
             }
-
+            
             try {
-                const response = await fetch(`http://127.0.0.1:8080/api/v1/expression/${expressionId}`);
+                const response = await fetch(`${MAIN_API_URL}/api/v1/expressions`, {
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.expressions && data.expressions.length > 0) {
+                        const expressionsList = data.expressions.map(expr => 
+                            `ID: ${expr.id}\nВыражение: ${expr.expression}\nСтатус: ${expr.status}\nРезультат: ${expr.result || 'еще не вычислен'}\n────────────────────`
+                        ).join('\n');
+                        showExpressionsResult(expressionsList);
+                    } else {
+                        showExpressionsResult('Нет сохраненных выражений');
+                    }
+                } else {
+                    showExpressionsError('Ошибка при получении списка выражений');
+                }
+            } catch (error) {
+                showExpressionsError('Ошибка сети: ' + error.message);
+            }
+        }
+        
+        // Получение выражения по ID
+        async function getExpressionById() {
+            if (!token) {
+                showExpressionsError('Требуется авторизация');
+                switchTab('auth');
+                return;
+            }
+            
+            const expressionId = document.getElementById('expressionId').value;
+            if (!expressionId) {
+                showExpressionsError('Пожалуйста, введите ID выражения');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${MAIN_API_URL}/api/v1/expression/${expressionId}`, {
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+                
                 if (response.ok) {
                     const data = await response.json();
                     const expr = data.expression;
-                    document.getElementById('result').innerText = `ID: ${expr.id}, Статус: ${expr.status}, Результат: ${expr.result}`;
+                    showExpressionsResult(
+                        `ID: ${expr.id}\n` +
+                        `Выражение: ${expr.expression}\n` +
+                        `Статус: ${expr.status}\n` +
+                        `Результат: ${expr.result || 'еще не вычислен'}\n`
+                    );
                 } else if (response.status === 404) {
-                    document.getElementById('result').innerText = 'Выражение не найдено';
+                    showExpressionsError('Выражение не найдено');
                 } else {
-                    document.getElementById('result').innerText = 'Ошибка при получении выражения';
+                    showExpressionsError('Ошибка при получении выражения');
                 }
             } catch (error) {
-                document.getElementById('result').innerText = 'Ошибка при получении выражения';
+                showExpressionsError('Ошибка сети: ' + error.message);
             }
+        }
+        
+        // Вспомогательные функции
+        function showExpressionsSection() {
+            document.getElementById('logout-btn').classList.remove('hidden');
+            switchTab('expressions');
+        }
+        
+        function clearAuthFields() {
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        function showAuthError(message) {
+            document.getElementById('auth-error').textContent = message;
+            document.getElementById('auth-success').textContent = '';
+        }
+        
+        function showAuthSuccess(message) {
+            document.getElementById('auth-success').textContent = message;
+            document.getElementById('auth-error').textContent = '';
+        }
+        
+        function showExpressionsResult(message) {
+            document.getElementById('expressions-result').textContent = message;
+            document.getElementById('expressions-error').textContent = '';
+        }
+        
+        function showExpressionsError(message) {
+            document.getElementById('expressions-error').textContent = message;
+            document.getElementById('expressions-result').textContent = '';
         }
     </script>
 </body>

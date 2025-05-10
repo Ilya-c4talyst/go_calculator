@@ -1,4 +1,4 @@
-<h1>Калькулятор</h1>
+<h1>Распределённый вычислитель арифметических выражений</h1>
 
 <h2>Краткое описание</h2>
 <p>Данный сервис может использоваться для различных вычислений в режиме онлайн.</p>
@@ -11,116 +11,178 @@
   <li>Операции приоритета (скобки)</li>
 </ol>
 
+<h2>Схема приложения</h2>
+Используется
+<ol>
+  <li>PostgreSQL для хранения данных о пользователе и выражениях</li>
+  <li>Сервис auth отвечает за аутентификацию</li>
+  <li>Сервис service выполняет основную бизнес логику с вычислениями</li>
+  <li>Сервисы общаются между собой по gRPC</li>
+  <li>Агенты общаются с бизнес сервисом по http</li>
+  <li>Регресс файл написан на Python - в корне test_application.py</li>
+</ol>
+<img src="schema.png">
 
-<h2>UI - используйте index.html</h2>
 <h2>Настройка проекта</h2>
 <ol>
   <li>Клонируйте репозиторий.</li>
-  <li>Установите библиотеку для чтения .env:
-    <pre><code>go get github.com/joho/godotenv</code></pre>
+  <pre><code>git@github.com:Ilya-c4talyst/go_calculator.git</code></pre>
+  <li>Установите библиотеки:
+    <pre><code>cd service
+go mod download
+cd auth
+go mod download</code></pre>
   </li>
-  <li>Создайте в корне проекта файл <code>.env</code> и добавьте в него настройки (пример заполнения):
-    <ul>
-      <li>TIME_ADDITION_MS=1</li>
-      <li>TIME_SUBTRACTION_MS=1</li>
-      <li>TIME_MULTIPLICATIONS_MS=1</li>
-      <li>TIME_DIVISIONS_MS=1</li>
-      <li>COMPUTING_POWER=2</li>
-    </ul>
-  </li>
-  <li>Запустите проект:
-    <pre><code>go run cmd/main.go</code></pre>
+  <li>Создайте в корне проекта файл <code>.env</code> и добавьте в него настройки:
+    <pre><code>TIME_ADDITION_MS=1
+TIME_SUBTRACTION_MS=1
+TIME_MULTIPLICATIONS_MS=1
+TIME_DIVISIONS_MS=1
+COMPUTING_POWER=2
+POSTGRES_USER=username
+POSTGRES_PASSWORD=password
+POSTGRES_PORT=5432
+POSTGRES_NAME=postgres
+POSTGRES_HOST=localhost
+SECRETKEY=secret_key
+env=prom</code></pre>
   </li>
 </ol>
-<h2>Для продвинутых</h2>
-<ol>
-  <li>docker build -t myapp .</li>
-  <li>docker run -p 8080:8080 myapp</li>
-  <li>Открыть index.html</li>
-</ol>
+<h2>Запуск проекта</h2>
 
-<h2>Как это работает</h2>
-<p>При запуске приложения стартует сервер, который принимает запросы пользователей, а также агент, который опрашивает сервер на наличие новых задач. Если задачи есть, агент их обрабатывает и обновляет статус выражения.</p>
-<h2>Схема приложения</h2>
-<img src="schema.jpeg">
+Легче всего запустить проекте с помощью докера. В корне проекта выполните команду <pre><code>docker-compose up -d --build</code></pre>
+
+Или же запустите два терминала (в папке auth и service) и в кажом выполните команду
+<pre><code>go run cmd/main.go</code></pre>
+
+После успешного запуска можно открыть в браузере страницу
+<pre><code>index.html</code></pre>
+
+и приступить к тетсированию
+
 
 <h2>Примеры запросов</h2>
 
-<h2>UI</h2>
+<h3>UI</h3>
 <p>В корне проекта находится HTML-страница <code>index.html</code>, с помощью которой можно удобно выполнять описанные ниже запросы.</p>
 
-<h2>Сервер</h2>
-<h3>Для запросов рекомендуется использовать программу Postman</h3>
-<p>Сервер запускается и принимает запросы на базовый эндпоинт <code>/api/v1/calculate</code>. В теле запроса в поле <code>"expression"</code> укажите выражение, чтобы получить результат о созданной задаче.</p>
-<p><strong>POST http://127.0.0.1:8080/api/v1/calculate</strong></p>
+<h3>Интеграционные тесты</h3>
+<p>Регресс файл написан на Python - в корне test_application.py.</p>
+
+<h2>Спецификация API калькулятора арифметических выражений (v2)</h2>
+
+<h2>Аутентификация</h2>
+<p>Все запросы к API (кроме /register и /login) требуют JWT-токена в заголовке Authorization.</p>
+
+<h3>Регистрация нового пользователя</h3>
+<p><strong>POST http://localhost:8081/register</strong></p>
 <p>Вход:</p>
 <pre><code>{
-    "expression": "выражение"
+    "username": "имя пользователя",
+    "password": "пароль"
 }</code></pre>
 <p>На выходе:</p>
 <pre><code>{
-    "id": ID созданного выражения
+    "message": "пользователь успешно зарегистрирован"
 }</code></pre>
 
-<p>Чтобы увидеть созданные выражения, перейдите по эндпоинту <code>/api/v1/expressions</code>.</p>
-<p><strong>GET http://127.0.0.1:8080/api/v1/expressions</strong></p>
+<h3>Вход пользователя</h3>
+<p><strong>POST http://localhost:8081/login</strong></p>
 <p>Вход:</p>
-<pre><code>{}</code></pre>
+<pre><code>{
+    "username": "имя пользователя",
+    "password": "пароль"
+}</code></pre>
+<p>На выходе:</p>
+<pre><code>{
+    "token": "JWT токен для авторизации"
+}</code></pre>
+
+<h2>Основное API (порт 8080)</h2>
+<p>Все запросы требуют заголовка Authorization с JWT-токеном.</p>
+
+<h3>Добавление выражения для вычисления</h3>
+<p><strong>POST http://localhost:8080/api/v1/calculate</strong></p>
+<p>Вход:</p>
+<pre><code>{
+    "expression": "арифметическое выражение"
+}</code></pre>
+<p>На выходе:</p>
+<pre><code>{
+    "id": "уникальный идентификатор выражения"
+}</code></pre>
+
+<h3>Получение списка всех выражений пользователя</h3>
+<p><strong>GET http://localhost:8080/api/v1/expressions</strong></p>
 <p>На выходе:</p>
 <pre><code>{
     "expressions": [
         {
-            "id": 0,
-            "status": "queued",
-            "result": "0"
+            "id": "идентификатор",
+            "expression": "текст выражения",
+            "status": "статус (queued/processing/solved/error)",
+            "result": "результат (если вычислено)",
         },
-        {
-            "id": 1,
-            "status": "solved",
-            "result": "0"
-        }
     ]
 }</code></pre>
 
-<p>Чтобы получить конкретное выражение, используйте эндпоинт <code>/api/v1/expression/:id</code>.</p>
-<p><strong>GET http://127.0.0.1:8080/api/v1/expression/1</strong></p>
-<p>Вход:</p>
-<pre><code>{}</code></pre>
+<h3>Получение конкретного выражения по ID</h3>
+<p><strong>GET http://localhost:8080/api/v1/expression/:id</strong></p>
 <p>На выходе:</p>
 <pre><code>{
     "expression": {
-        "id": 1,
-        "status": "solved",
-        "result": "1.00"
+        "id": "идентификатор",
+        "expression": "текст выражения",
+        "status": "статус",
+        "result": "результат",
     }
 }</code></pre>
 
-<h2>Агент</h2>
-<p>Агент работает независимо от пользователя и опрашивает сервер в зависимости от числа воркеров.</p>
-<p><strong>Получение задачи</strong></p>
-<p><strong>GET http://127.0.0.1:8080/api/v1/internal/task</strong></p>
-<p>Вход:</p>
-<pre><code>{}</code></pre>
+<h2>API для агентов вычисления</h2>
+
+<h3>Получение задачи для вычисления</h3>
+<p><strong>GET http://localhost:8080/api/v1/internal/task</strong></p>
 <p>На выходе:</p>
 <pre><code>{
-    "id": 1,
-    "arg1": 1,
-    "arg2": 1,
-    "operation": 43,
-    "operation_time": 1
+    "id": "идентификатор подвыражения",
+    "arg1": "первый аргумент",
+    "arg2": "второй аргумент",
+    "operation": "код операции (43 для '+', 45 для '-', и т.д.)",
+    "operation_time": "время выполнения операции в секундах"
 }</code></pre>
 
-<p><strong>Отправка результата</strong></p>
-<p><strong>POST http://127.0.0.1:8080/api/v1/internal/task</strong></p>
+<h3>Отправка результата вычисления</h3>
+<p><strong>POST http://localhost:8080/api/v1/internal/task</strong></p>
 <p>Вход:</p>
 <pre><code>{
-  "id": 1,
-  "result": 2.00
+    "id": "идентификатор подвыражения",
+    "result": "результат вычисления"
 }</code></pre>
 
-<h2>Тестирование</h2>
-<p>Для скриптов <code>calc.go</code> и <code>app.go</code> написаны тесты. Для их запуска перейдите в соответствующую директорию и выполните:</p>
-<pre><code>go test -v</code></pre>
+<h2>Интерфейс пользователя</h2>
+<p>Приложение предоставляет веб-интерфейс с двумя основными разделами:</p>
+
+<h3>1. Аутентификация</h3>
+<ul>
+    <li>Форма регистрации нового пользователя</li>
+    <li>Форма входа существующего пользователя</li>
+</ul>
+
+<h3>2. Работа с выражениями</h3>
+<ul>
+    <li>Добавление нового выражения для вычисления</li>
+    <li>Просмотр списка всех выражений пользователя с их статусами</li>
+    <li>Просмотр деталей конкретного выражения по ID</li>
+</ul>
+
+<h2>Особенности новой версии</h2>
+<ul>
+    <li>Добавлена система аутентификации пользователей</li>
+    <li>Каждый пользователь видит только свои выражения</li>
+    <li>В интерфейсе отображается больше информации о выражениях</li>
+    <li>Добавлены временные метки создания и завершения вычислений</li>
+    <li>Интерфейс стал более удобным и информативным</li>
+</ul>
 
 <h2>Разработчик</h2>
 <ol>
@@ -130,6 +192,9 @@
 
 <h2>Технологии</h2>
 <ol>
-  <li>Golang v1.20</li>
-  <li>github.com/joho/godotenv</li>
+  <li>Golang v1.24</li>
+  <li>PostgreSQL</li>
+  <li>Gin</li>
+  <li>JWT</li>
+  <li>GORM</li>
 </ol>

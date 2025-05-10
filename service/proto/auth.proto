@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/Ilya-c4talyst/go_calculator/service/proto";
+
+service AuthService {
+  rpc ValidateToken (TokenRequest) returns (TokenResponse);
+}
+
+message TokenRequest {
+  string token = 1;
+}
+
+message TokenResponse {
+  bool valid = 1;
+  uint32 user_id = 2;
+  string error = 3;
+}
