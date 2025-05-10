@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Мидлвэр cors
 func CorsMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		// Разрешённые домены (обязательно с http/https)
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},

@@ -2,10 +2,14 @@
 docker build -t myapp .
 
 -- Запуск контейнера
-docker run -p 8080:8080 myapp
+docker-compose up -d --build
+
+-- Удаление
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+docker rmi $(docker images -q)
 
 -- env
-PORT=8081
 TIME_ADDITION_MS=1
 TIME_SUBTRACTION_MS=1
 TIME_MULTIPLICATIONS_MS=1
@@ -16,3 +20,5 @@ POSTGRES_PASSWORD=password
 POSTGRES_PORT=5432
 POSTGRES_NAME=postgres
 POSTGRES_HOST=localhost
+SECRETKEY=secret_key
+env=prom
