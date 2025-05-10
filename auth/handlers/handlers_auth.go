@@ -10,14 +10,17 @@ import (
 	utils "github.com/Ilya-c4talyst/go_calculator/auth/utils"
 )
 
+// Хэндлер для аутентификации
 type AuthHandler struct {
 	DB *gorm.DB
 }
 
+// Создание хендлера
 func NewAuthHandler(db *gorm.DB) *AuthHandler {
 	return &AuthHandler{DB: db}
 }
 
+// Хендлер на регистрацию
 func (h *AuthHandler) Register(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -47,6 +50,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.AuthResponse{Token: token})
 }
 
+// Хэндлер на вход в систему
 func (h *AuthHandler) Login(c *gin.Context) {
 	var inputUser models.User
 	if err := c.ShouldBindJSON(&inputUser); err != nil {

@@ -48,6 +48,7 @@ func EnableCORS(next http.Handler) http.Handler {
 	})
 }
 
+// Middleware для проверки прав
 func AuthMiddleware(authCli *auth_client.Client) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

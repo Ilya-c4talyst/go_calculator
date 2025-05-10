@@ -12,8 +12,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// ID таски (TODO: перенести в БД)
-var id = 1
+// // ID таски (TODO: перенести в БД)
+// var id = 1
 
 // Валидация входящего выражения
 func ValidateExpression(expression string) error {
@@ -82,8 +82,8 @@ func EvaluateExpression(expression string, current *models.Expression) *models.E
 		var result float64
 		var task models.Task
 
-		task.Id = id
-		id++
+		// task.Id = id
+		// id++
 		task.Arg1 = a
 		task.Arg2 = b
 		task.Operation = op

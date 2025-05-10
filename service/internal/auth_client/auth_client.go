@@ -14,11 +14,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// Клиент аутентификации
 type Client struct {
 	conn   *grpc.ClientConn
 	client pb.AuthServiceClient
 }
 
+// Создание клиента
 func New(addr string) (*Client, error) {
 	if addr == "" {
 		return nil, fmt.Errorf("empty gRPC server address")
@@ -65,6 +67,7 @@ func New(addr string) (*Client, error) {
 	}, nil
 }
 
+// Валидация токена
 func (c *Client) ValidateToken(token string) (uint32, error) {
 	resp, err := c.client.ValidateToken(context.Background(), &pb.TokenRequest{
 		Token: token,
@@ -80,6 +83,7 @@ func (c *Client) ValidateToken(token string) (uint32, error) {
 	return resp.UserId, nil
 }
 
+// Закрытие клиента
 func (c *Client) Close() {
 	if err := c.conn.Close(); err != nil {
 		log.Printf("Failed to close gRPC connection: %v", err)

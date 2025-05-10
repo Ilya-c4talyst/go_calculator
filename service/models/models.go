@@ -17,11 +17,11 @@ type DoneTask struct {
 
 // Модель выражения
 type Expression struct {
-	Id      int    `json:"id";gorm:"primaryKey"`
+	Id      int    `json:"id" gorm:"primaryKey;autoIncrement"`
 	Value   string `json:"expression"`
 	Status  string `json:"status"`
 	Result  string `json:"result"`
-	User_id uint32 `json:"user_id;gorm:"not null"`
+	User_id uint32 `json:"user_id" gorm:"not null"`
 }
 
 // Респонс списка выражений
