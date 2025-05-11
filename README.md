@@ -50,16 +50,47 @@ env=prom</code></pre>
 </ol>
 <h2>Запуск проекта</h2>
 
-Легче всего запустить проекте с помощью докера. В корне проекта выполните команду <pre><code>docker-compose up -d --build</code></pre>
 
-Или же запустите два терминала (в папке auth и service) и в кажом выполните команду
-<pre><code>go run cmd/main.go</code></pre>
+<ul>
+Легче всего запустить проекте с помощью докера.
+<li>Вариант 1. Сборка образов БД и самих сервисов.
+В корне проекта выполните команду <pre><code>docker-compose up -d --build</code></pre>
+</li> 
+<li>Вариант 2. Сборка образа только БД
 
-После успешного запуска можно открыть в браузере страницу
+Нужно подменить docker-compose.yml на следующий
+
+<pre><code>version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: my-postgres
+    restart: always
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_NAME}
+    command:
+      - 'postgres'
+      - '-c'
+      - 'port=${POSTGRES_PORT}'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:</code></pre>в .env поменять <pre><code>env=prom на env=dev</code></pre>
+Запустить два терминала (в папке auth и service) и в кажом выполнить команду
+<pre><code>go run cmd/main.go</code></pre></li> 
+
+<b>После успешного запуска можно открыть в браузере страницу</b>
 <pre><code>index.html</code></pre>
 
-и приступить к тетсированию
+и приступить к тестированию
 
+</ul>
 
 <h2>Примеры запросов</h2>
 
